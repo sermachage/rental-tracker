@@ -44,6 +44,29 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>add-source-roots</id>
+            <phase>generate-sources</phase>
+            <goals><goal>add-source</goal></goals>
+            <configuration>
+              <sources><source>src/java</source></sources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>add-test-source-roots</id>
+            <phase>generate-test-sources</phase>
+            <goals><goal>add-test-source</goal></goals>
+            <configuration>
+              <sources><source>src/test</source></sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- Surefire runs the unit tests during `mvn test` / `mvn verify` -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -57,7 +80,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.12</version>
+        <version>0.8.16</version>
         <executions>
           <!-- Attach the JaCoCo agent to the test JVM so it can record coverage -->
           <execution>

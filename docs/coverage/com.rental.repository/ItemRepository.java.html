@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ItemRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rental-tracker</a> &gt; <a href="index.source.html" class="el_package">com.rental.repository</a> &gt; <span class="el_source">ItemRepository.java</span></div><h1>ItemRepository.java</h1><pre class="source lang-java linenums">package com.rental.repository;
+
+import java.sql.*;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import com.rental.domain.Item;
+import com.rental.domain.ItemStatus;
+import com.rental.infrastructure.Database;
+
+/** Stores and queries listed items. */
+public class ItemRepository {
+    private final Database database;
+
+<span class="fc" id="L17">    public ItemRepository(Database database) {</span>
+<span class="fc" id="L18">        this.database = database;</span>
+<span class="fc" id="L19">    }</span>
+
+    /** Inserts a new item and reloads it with its database id and timestamp. */
+    public Item insert(Item item) {
+<span class="fc" id="L23">        try (PreparedStatement statement = database.connection().prepareStatement(&quot;&quot;&quot;</span>
+                INSERT INTO listed_items(owner_id, item_name, description, cost_per_day, status)
+                VALUES (?, ?, ?, ?, ?)&quot;&quot;&quot;, Statement.RETURN_GENERATED_KEYS)) {
+<span class="fc" id="L26">            statement.setLong(1, item.ownerId());</span>
+<span class="fc" id="L27">            statement.setString(2, item.itemName());</span>
+<span class="fc" id="L28">            statement.setString(3, item.description());</span>
+<span class="fc" id="L29">            statement.setInt(4, item.costPerDay());</span>
+<span class="fc" id="L30">            statement.setString(5, item.status().dbValue());</span>
+<span class="fc" id="L31">            statement.executeUpdate();</span>
+<span class="fc" id="L32">            try (ResultSet keys = statement.getGeneratedKeys()) {</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">                if (!keys.next()) {</span>
+<span class="nc" id="L34">                    throw new MappingException(&quot;Item insert did not return an id&quot;, null);</span>
+                }
+<span class="fc" id="L36">                return findById(keys.getLong(1)).orElseThrow(</span>
+<span class="nc" id="L37">                        () -&gt; new NotFoundException(&quot;Item inserted but could not be reloaded&quot;));</span>
+            }
+<span class="nc" id="L39">        } catch (ConstraintViolationException | NotFoundException | MappingException exception) {</span>
+<span class="nc" id="L40">            throw exception;</span>
+<span class="nc" id="L41">        } catch (SQLException exception) {</span>
+<span class="nc" id="L42">            throw translate(&quot;insert item&quot;, exception);</span>
+        }
+    }
+
+    /** Updates an item's status. */
+    public Item updateStatus(Item item) {
+<span class="fc" id="L48">        try (PreparedStatement statement = database.connection().prepareStatement(</span>
+                &quot;UPDATE listed_items SET status = ? WHERE item_id = ?&quot;)) {
+<span class="fc" id="L50">            statement.setString(1, item.status().dbValue());</span>
+<span class="fc" id="L51">            statement.setLong(2, item.itemId());</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">            if (statement.executeUpdate() == 0) {</span>
+<span class="nc" id="L53">                throw new NotFoundException(&quot;Item not found: &quot; + item.itemId());</span>
+            }
+<span class="fc" id="L55">            return item;</span>
+<span class="nc" id="L56">        } catch (ConstraintViolationException | NotFoundException exception) {</span>
+<span class="nc" id="L57">            throw exception;</span>
+<span class="nc" id="L58">        } catch (SQLException exception) {</span>
+<span class="nc" id="L59">            throw translate(&quot;update item status&quot;, exception);</span>
+        }
+    }
+
+    /** Finds an item by id. */
+    public Optional&lt;Item&gt; findById(long id) {
+<span class="fc" id="L65">        try (PreparedStatement statement = database.connection().prepareStatement(</span>
+                &quot;SELECT * FROM listed_items WHERE item_id = ?&quot;)) {
+<span class="fc" id="L67">            statement.setLong(1, id);</span>
+<span class="fc" id="L68">            try (ResultSet rows = statement.executeQuery()) {</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                return rows.next() ? Optional.of(map(rows)) : Optional.empty();</span>
+            }
+<span class="nc" id="L71">        } catch (MappingException exception) {</span>
+<span class="nc" id="L72">            throw exception;</span>
+<span class="nc" id="L73">        } catch (SQLException exception) {</span>
+<span class="nc" id="L74">            throw translate(&quot;find item&quot;, exception);</span>
+        }
+    }
+
+    /** Lists an owner's items in database id order. */
+    public List&lt;Item&gt; findByOwner(long ownerId) {
+<span class="nc" id="L80">        return query(&quot;SELECT * FROM listed_items WHERE owner_id = ? ORDER BY item_id&quot;, ownerId);</span>
+    }
+
+    /** Lists currently available items owned by a user. */
+    public List&lt;Item&gt; findAvailableByOwner(long ownerId) {
+<span class="nc" id="L85">        return query(&quot;&quot;&quot;</span>
+                SELECT * FROM listed_items
+                WHERE owner_id = ? AND status = 'available'
+                ORDER BY item_id&quot;&quot;&quot;, ownerId);
+    }
+
+    private List&lt;Item&gt; query(String sql, long ownerId) {
+<span class="nc" id="L92">        List&lt;Item&gt; items = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L93">        try (PreparedStatement statement = database.connection().prepareStatement(sql)) {</span>
+<span class="nc" id="L94">            statement.setLong(1, ownerId);</span>
+<span class="nc" id="L95">            try (ResultSet rows = statement.executeQuery()) {</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">                while (rows.next()) {</span>
+<span class="nc" id="L97">                    items.add(map(rows));</span>
+                }
+            }
+<span class="nc" id="L100">            return items;</span>
+<span class="nc" id="L101">        } catch (MappingException exception) {</span>
+<span class="nc" id="L102">            throw exception;</span>
+<span class="nc" id="L103">        } catch (SQLException exception) {</span>
+<span class="nc" id="L104">            throw translate(&quot;query items&quot;, exception);</span>
+        }
+    }
+
+    private static Item map(ResultSet rows) {
+        try {
+<span class="fc" id="L110">            String created = rows.getString(&quot;created_at&quot;);</span>
+<span class="fc" id="L111">            return new Item(rows.getLong(&quot;item_id&quot;), rows.getLong(&quot;owner_id&quot;),</span>
+<span class="fc" id="L112">                    rows.getString(&quot;item_name&quot;), rows.getString(&quot;description&quot;),</span>
+<span class="fc" id="L113">                    rows.getInt(&quot;cost_per_day&quot;),</span>
+<span class="fc" id="L114">                    ItemStatus.fromDbValue(rows.getString(&quot;status&quot;)),</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">                    created == null ? null : LocalDateTime.parse(created.replace(' ', 'T')));</span>
+<span class="nc" id="L116">        } catch (SQLException | RuntimeException exception) {</span>
+<span class="nc" id="L117">            throw new MappingException(&quot;Could not map item row&quot;, exception);</span>
+        }
+    }
+
+    private static RuntimeException translate(String operation, SQLException exception) {
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        String text = exception.getMessage() == null ? &quot;&quot; : exception.getMessage().toLowerCase();</span>
+<span class="nc bnc" id="L123" title="All 6 branches missed.">        if (text.contains(&quot;unique&quot;) || text.contains(&quot;not null&quot;) || text.contains(&quot;check&quot;)</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">                || text.contains(&quot;foreign key&quot;)) {</span>
+<span class="nc" id="L125">            return new ConstraintViolationException(&quot;Constraint violation while trying to &quot; + operation, exception);</span>
+        }
+<span class="nc" id="L127">        return new DatabaseException(&quot;Database failure while trying to &quot; + operation, exception);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

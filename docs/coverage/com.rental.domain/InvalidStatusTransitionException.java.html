@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InvalidStatusTransitionException.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rental-tracker</a> &gt; <a href="index.source.html" class="el_package">com.rental.domain</a> &gt; <span class="el_source">InvalidStatusTransitionException.java</span></div><h1>InvalidStatusTransitionException.java</h1><pre class="source lang-java linenums">package com.rental.domain;
+
+/**
+ * Thrown when code tries to move an item (or rental) to a status that the state machine forbids,
+ * e.g. AVAILABLE -&gt; AVAILABLE or UNLISTED -&gt; RENTED.
+ *
+ * &lt;p&gt;It extends RuntimeException (an &quot;unchecked&quot; exception): breaking a transition rule is a
+ * programming/business-rule error, so callers are not forced to write try/catch everywhere.
+ * The Service layer decides when to catch it and show a friendly message.
+ */
+public class InvalidStatusTransitionException extends RuntimeException {
+
+    /**
+     * @param from the current status name
+     * @param to   the status we tried to move to
+     */
+    public InvalidStatusTransitionException(String from, String to) {
+<span class="fc" id="L18">        super(&quot;Illegal status change: &quot; + from + &quot; -&gt; &quot; + to);</span>
+<span class="fc" id="L19">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

@@ -1,11 +1,16 @@
 package com.rental;
 
+import java.nio.file.Path;
+
+import com.rental.infrastructure.Database;
+import com.rental.repository.ItemRepository;
+import com.rental.repository.RentalRepository;
+import com.rental.repository.UserRepository;
+import com.rental.service.RentalService;
+import com.rental.transport.Menu;
+
 /**
  * Entry point of the Rental Tracker CLI.
- *
- * <p>Later this class becomes the "composition root": the single place where we
- * create the Database, Repositories, Services and the Menu and hand them to each
- * other. For now it only proves that the build works.
  */
 public class App {
 
@@ -16,6 +21,14 @@ public class App {
 
     /** JVM calls this method first when the program starts. */
     public static void main(String[] args) {
-        System.out.println(banner());
+        try (Database database = new Database(Path.of("data", "app.db"))) {
+            UserRepository users = new UserRepository(database);
+            ItemRepository items = new ItemRepository(database);
+            RentalRepository rentals = new RentalRepository(database);
+            RentalService service = new RentalService(users, items, rentals);
+            new Menu(service, users, items).run();
+        } catch (Exception exception) {
+            System.out.println("The application could not start: " + exception.getMessage());
+        }
     }
 }

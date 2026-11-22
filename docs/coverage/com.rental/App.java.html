@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>App.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rental-tracker</a> &gt; <a href="index.source.html" class="el_package">com.rental</a> &gt; <span class="el_source">App.java</span></div><h1>App.java</h1><pre class="source lang-java linenums">package com.rental;
+
+import java.nio.file.Path;
+
+import com.rental.infrastructure.Database;
+import com.rental.repository.ItemRepository;
+import com.rental.repository.RentalRepository;
+import com.rental.repository.UserRepository;
+import com.rental.service.RentalService;
+import com.rental.transport.Menu;
+
+/**
+ * Entry point of the Rental Tracker CLI.
+ */
+<span class="nc" id="L15">public class App {</span>
+
+    /** Returns the banner text (kept separate from main() so it is easy to test). */
+    public static String banner() {
+<span class="fc" id="L19">        return &quot;=== Rental tracker ===&quot;;</span>
+    }
+
+    /** JVM calls this method first when the program starts. */
+    public static void main(String[] args) {
+<span class="nc" id="L24">        try (Database database = new Database(Path.of(&quot;data&quot;, &quot;app.db&quot;))) {</span>
+<span class="nc" id="L25">            UserRepository users = new UserRepository(database);</span>
+<span class="nc" id="L26">            ItemRepository items = new ItemRepository(database);</span>
+<span class="nc" id="L27">            RentalRepository rentals = new RentalRepository(database);</span>
+<span class="nc" id="L28">            RentalService service = new RentalService(users, items, rentals);</span>
+<span class="nc" id="L29">            new Menu(service, users, items).run();</span>
+<span class="nc" id="L30">        } catch (Exception exception) {</span>
+<span class="nc" id="L31">            System.out.println(&quot;The application could not start: &quot; + exception.getMessage());</span>
+<span class="nc" id="L32">        }</span>
+<span class="nc" id="L33">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ItemStatus.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rental-tracker</a> &gt; <a href="index.source.html" class="el_package">com.rental.domain</a> &gt; <span class="el_source">ItemStatus.java</span></div><h1>ItemStatus.java</h1><pre class="source lang-java linenums">package com.rental.domain;
+
+import java.util.EnumSet;
+import java.util.Set;
+
+/**
+ * The lifecycle state of a listed item, implemented as a STATE MACHINE.
+ *
+ * &lt;p&gt;An enum is a fixed set of named constants. Here each constant also carries the
+ * knowledge of which states it may move to, so the rules live in ONE place:
+ *
+ * &lt;pre&gt;
+ *   (new) -&gt; AVAILABLE                 list item
+ *   AVAILABLE -&gt; RENTED                record rental
+ *   RENTED    -&gt; AVAILABLE             confirm return
+ *   AVAILABLE -&gt; UNLISTED              delist
+ *   RENTED    -&gt; UNLISTED              delist while out on a rental
+ *   UNLISTED  -&gt; AVAILABLE             relist (Service also checks there is no active rental)
+ * &lt;/pre&gt;
+ *
+ * &lt;p&gt;The database CHECK constraint is only a safety net; THIS class is the real gate.
+ */
+<span class="fc" id="L23">public enum ItemStatus {</span>
+
+    // Each constant is created with (databaseText, allowedNextStates).
+    // Enum constants are built before their neighbours exist, so the allowed-targets are
+    // filled in by the static block below instead of in the constructor arguments.
+<span class="fc" id="L28">    AVAILABLE(&quot;available&quot;),</span>
+<span class="fc" id="L29">    RENTED(&quot;rented&quot;),</span>
+<span class="fc" id="L30">    UNLISTED(&quot;unlisted&quot;);</span>
+
+    /** The exact text stored in the database's status column. */
+    private final String dbValue;
+
+    /** The states this state is allowed to move to. Set in the static block. */
+    private Set&lt;ItemStatus&gt; allowedTargets;
+
+<span class="fc" id="L38">    ItemStatus(String dbValue) {</span>
+<span class="fc" id="L39">        this.dbValue = dbValue;</span>
+<span class="fc" id="L40">    }</span>
+
+    // Static initialiser: runs once after all constants exist, so we can reference them.
+    static {
+<span class="fc" id="L44">        AVAILABLE.allowedTargets = EnumSet.of(RENTED, UNLISTED);</span>
+<span class="fc" id="L45">        RENTED.allowedTargets = EnumSet.of(AVAILABLE, UNLISTED);</span>
+<span class="fc" id="L46">        UNLISTED.allowedTargets = EnumSet.of(AVAILABLE);</span>
+<span class="fc" id="L47">    }</span>
+
+    /** @return the text to store in / compare with the database column */
+    public String dbValue() {
+<span class="fc" id="L51">        return dbValue;</span>
+    }
+
+    /** @return true if moving from this state to {@code target} is legal */
+    public boolean canTransitionTo(ItemStatus target) {
+<span class="fc" id="L56">        return allowedTargets.contains(target);</span>
+    }
+
+    /**
+     * Returns {@code target} if the move is legal, otherwise throws.
+     * The Service calls this before every status change.
+     *
+     * @throws InvalidStatusTransitionException if the move is not allowed
+     */
+    public ItemStatus transitionTo(ItemStatus target) {
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (!canTransitionTo(target)) {</span>
+<span class="fc" id="L67">            throw new InvalidStatusTransitionException(this.name(), target.name());</span>
+        }
+<span class="fc" id="L69">        return target;</span>
+    }
+
+    /**
+     * Converts database text (e.g. &quot;available&quot;) back into the enum.
+     * The Repository wraps the IllegalArgumentException into our typed MappingException later.
+     *
+     * @throws IllegalArgumentException if the text matches no status (or is null)
+     */
+    public static ItemStatus fromDbValue(String text) {
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        for (ItemStatus status : values()) {</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">            if (status.dbValue.equals(text)) {</span>
+<span class="fc" id="L81">                return status;</span>
+            }
+        }
+<span class="fc" id="L84">        throw new IllegalArgumentException(&quot;Unknown item status: &quot; + text);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

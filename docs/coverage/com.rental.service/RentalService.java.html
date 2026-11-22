@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RentalService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rental-tracker</a> &gt; <a href="index.source.html" class="el_package">com.rental.service</a> &gt; <span class="el_source">RentalService.java</span></div><h1>RentalService.java</h1><pre class="source lang-java linenums">package com.rental.service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import com.rental.domain.*;
+import com.rental.repository.*;
+
+/** Enforces user, listing, rental, and return rules. */
+public class RentalService {
+    private final UserRepository users;
+    private final ItemRepository items;
+    private final RentalRepository rentals;
+
+<span class="fc" id="L16">    public RentalService(UserRepository users, ItemRepository items, RentalRepository rentals) {</span>
+<span class="fc" id="L17">        this.users = users;</span>
+<span class="fc" id="L18">        this.items = items;</span>
+<span class="fc" id="L19">        this.rentals = rentals;</span>
+<span class="fc" id="L20">    }</span>
+
+    /** Loads the first account or creates it when the database is empty. */
+    public User loadOwner(String username) {
+<span class="fc" id="L24">        requireText(username, &quot;Username&quot;);</span>
+<span class="fc" id="L25">        Optional&lt;User&gt; existing = users.findByUsername(username.trim());</span>
+<span class="fc" id="L26">        return existing.orElseGet(() -&gt; users.insert(User.newUser(username.trim())));</span>
+    }
+
+    /** Creates or reuses a renter for the supplied name. */
+    public User renter(String username) {
+<span class="fc" id="L31">        requireText(username, &quot;Renter name&quot;);</span>
+<span class="fc" id="L32">        Optional&lt;User&gt; existing = users.findByUsername(username.trim());</span>
+<span class="fc" id="L33">        return existing.orElseGet(() -&gt; users.insert(User.newUser(username.trim())));</span>
+    }
+
+    /** Lists one owner. */
+    public List&lt;Item&gt; inventory(long ownerId) {
+<span class="nc" id="L38">        return items.findByOwner(ownerId);</span>
+    }
+
+    /** Lists available items that can be rented. */
+    public List&lt;Item&gt; availableInventory(long ownerId) {
+<span class="nc" id="L43">        return items.findAvailableByOwner(ownerId);</span>
+    }
+
+    /** Lists active rentals belonging to an owner, sorted by due date in the repository. */
+    public List&lt;Rental&gt; activeRentals(long ownerId) {
+<span class="nc" id="L48">        return rentals.findActiveByOwner(ownerId);</span>
+    }
+
+    /** Finds an item and validates its owner. */
+    public Item findOwnedItem(long ownerId, long itemId) {
+<span class="fc" id="L53">        Item item = items.findById(itemId).orElseThrow(</span>
+<span class="nc" id="L54">                () -&gt; new NotFoundException(&quot;Item not found: &quot; + itemId));</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">        if (!item.ownerId().equals(ownerId)) {</span>
+<span class="nc" id="L56">            throw new NotFoundException(&quot;Item not found: &quot; + itemId);</span>
+        }
+<span class="fc" id="L58">        return item;</span>
+    }
+
+    /** Finds a rental and validates that its item belongs to the owner. */
+    public Rental findOwnedRental(long ownerId, long rentalId) {
+<span class="fc" id="L63">        Rental rental = rentals.findById(rentalId).orElseThrow(</span>
+<span class="nc" id="L64">                () -&gt; new NotFoundException(&quot;Rental not found: &quot; + rentalId));</span>
+<span class="fc" id="L65">        Item item = findOwnedItem(ownerId, rental.itemId());</span>
+<span class="pc bpc" id="L66" title="3 of 4 branches missed.">        if (item.status() == ItemStatus.AVAILABLE &amp;&amp; rental.status() == RentalStatus.ACTIVE) {</span>
+<span class="nc" id="L67">            throw new NotFoundException(&quot;Rental not found: &quot; + rentalId);</span>
+        }
+<span class="fc" id="L69">        return rental;</span>
+    }
+
+    /** Lists an item and starts its lifecycle. */
+    public Item listItem(long ownerId, String name, String description, int costPerDay) {
+<span class="fc" id="L74">        requireText(name, &quot;Item name&quot;);</span>
+<span class="fc" id="L75">        requireText(description, &quot;Description&quot;);</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        if (costPerDay &lt; 0) {</span>
+<span class="nc" id="L77">            throw new IllegalArgumentException(&quot;Cost per day cannot be negative&quot;);</span>
+        }
+<span class="fc" id="L79">        return items.insert(Item.newListing(ownerId, name.trim(), description.trim(), costPerDay));</span>
+    }
+
+    /** Delists an owned item. */
+    public Item delist(long ownerId, long itemId) {
+<span class="fc" id="L84">        Item item = findOwnedItem(ownerId, itemId);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        ItemStatus target = item.status() == ItemStatus.RENTED ? ItemStatus.UNLISTED : ItemStatus.UNLISTED;</span>
+<span class="fc" id="L86">        return items.updateStatus(item.withStatus(item.status().transitionTo(target)));</span>
+    }
+
+    /** Relists an unlisted item, unless it still has an active rental. */
+    public Item relist(long ownerId, long itemId) {
+<span class="fc" id="L91">        Item item = findOwnedItem(ownerId, itemId);</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (rentals.hasActiveRental(itemId)) {</span>
+<span class="fc" id="L93">            throw new IllegalStateException(&quot;Cannot relist an item while it is rented&quot;);</span>
+        }
+<span class="fc" id="L95">        return items.updateStatus(item.withStatus(item.status().transitionTo(ItemStatus.AVAILABLE)));</span>
+    }
+
+    /** Records a rental and transitions the item to RENTED. */
+    public Rental rent(long ownerId, long itemId, String renterName, int days) {
+<span class="fc" id="L100">        Item item = findOwnedItem(ownerId, itemId);</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        if (item.status() != ItemStatus.AVAILABLE) {</span>
+<span class="fc" id="L102">            throw new IllegalStateException(&quot;Only available items can be rented&quot;);</span>
+        }
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if (days &lt;= 0) {</span>
+<span class="nc" id="L105">            throw new IllegalArgumentException(&quot;Rental duration must be at least one day&quot;);</span>
+        }
+<span class="fc" id="L107">        User renter = renter(renterName);</span>
+<span class="fc" id="L108">        LocalDateTime start = LocalDateTime.now().withNano(0);</span>
+<span class="fc" id="L109">        Rental rental = rentals.insert(Rental.newRental(itemId, renter.id(), start, days));</span>
+<span class="fc" id="L110">        items.updateStatus(item.withStatus(item.status().transitionTo(ItemStatus.RENTED)));</span>
+<span class="fc" id="L111">        return rental;</span>
+    }
+
+    /** Closes a rental and returns the item to AVAILABLE or leaves it UNLISTED. */
+    public Rental confirmReturn(long ownerId, long rentalId) {
+<span class="fc" id="L116">        Rental rental = findOwnedRental(ownerId, rentalId);</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if (rental.status() != RentalStatus.ACTIVE) {</span>
+<span class="nc" id="L118">            throw new IllegalStateException(&quot;Rental is already closed&quot;);</span>
+        }
+<span class="fc" id="L120">        Item item = findOwnedItem(ownerId, rental.itemId());</span>
+<span class="fc" id="L121">        Rental closed = rentals.update(rental.closedAt(LocalDateTime.now().withNano(0)));</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (item.status() == ItemStatus.RENTED) {</span>
+<span class="fc" id="L123">            items.updateStatus(item.withStatus(item.status().transitionTo(ItemStatus.AVAILABLE)));</span>
+        }
+<span class="fc" id="L125">        return closed;</span>
+    }
+
+    private static void requireText(String value, String label) {
+<span class="pc bpc" id="L129" title="2 of 4 branches missed.">        if (value == null || value.trim().isEmpty()) {</span>
+<span class="nc" id="L130">            throw new IllegalArgumentException(label + &quot; cannot be empty&quot;);</span>
+        }
+<span class="fc" id="L132">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>
