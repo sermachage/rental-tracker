@@ -19,6 +19,7 @@ class DatabaseTest {
                 assertTrue(names.contains("users"));
                 assertTrue(names.contains("listed_items"));
                 assertTrue(names.contains("rentals"));
+                assertTrue(names.contains("app_configuration"));
             }
         }
     }

@@ -44,6 +44,13 @@ public class Database implements AutoCloseable {
                 )
                 """);
             statement.executeUpdate("""
+                CREATE TABLE IF NOT EXISTS app_configuration (
+                    singleton_id INTEGER PRIMARY KEY CHECK (singleton_id = 1),
+                    owner_id INTEGER NOT NULL,
+                    FOREIGN KEY(owner_id) REFERENCES users(id)
+                )
+                """);
+            statement.executeUpdate("""
                 CREATE TABLE IF NOT EXISTS listed_items (
                     item_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     owner_id INTEGER NOT NULL,

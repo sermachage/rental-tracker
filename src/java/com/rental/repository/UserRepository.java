@@ -80,6 +80,24 @@ public class UserRepository {
         }
     }
 
+    /** Changes a user's username and returns the saved row. */
+    public User updateUsername(long id, String username) {
+        try (PreparedStatement statement = database.connection().prepareStatement(
+                "UPDATE users SET username = ? WHERE id = ?")) {
+            statement.setString(1, username);
+            statement.setLong(2, id);
+            if (statement.executeUpdate() == 0) {
+                throw new NotFoundException("User not found: " + id);
+            }
+            return findById(id).orElseThrow(
+                    () -> new NotFoundException("User not found: " + id));
+        } catch (ConstraintViolationException | NotFoundException | MappingException exception) {
+            throw exception;
+        } catch (SQLException exception) {
+            throw translate("update username", exception);
+        }
+    }
+
     private static User map(ResultSet rows) {
         try {
             String created = rows.getString("created_at");

@@ -60,71 +60,83 @@ public class ItemRepository {
         }
     }
 
+    /** Assigns seeded listings to the account selected during first-run setup. */
+    public void transferOwner(long previousOwnerId, long newOwnerId) {
+<span class="nc" id="L65">        try (PreparedStatement statement = database.connection().prepareStatement(</span>
+                &quot;UPDATE listed_items SET owner_id = ? WHERE owner_id = ?&quot;)) {
+<span class="nc" id="L67">            statement.setLong(1, newOwnerId);</span>
+<span class="nc" id="L68">            statement.setLong(2, previousOwnerId);</span>
+<span class="nc" id="L69">            statement.executeUpdate();</span>
+<span class="nc" id="L70">        } catch (SQLException exception) {</span>
+<span class="nc" id="L71">            throw translate(&quot;transfer item ownership&quot;, exception);</span>
+<span class="nc" id="L72">        }</span>
+<span class="nc" id="L73">    }</span>
+
     /** Finds an item by id. */
     public Optional&lt;Item&gt; findById(long id) {
-<span class="fc" id="L65">        try (PreparedStatement statement = database.connection().prepareStatement(</span>
+<span class="fc" id="L77">        try (PreparedStatement statement = database.connection().prepareStatement(</span>
                 &quot;SELECT * FROM listed_items WHERE item_id = ?&quot;)) {
-<span class="fc" id="L67">            statement.setLong(1, id);</span>
-<span class="fc" id="L68">            try (ResultSet rows = statement.executeQuery()) {</span>
-<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                return rows.next() ? Optional.of(map(rows)) : Optional.empty();</span>
+<span class="fc" id="L79">            statement.setLong(1, id);</span>
+<span class="fc" id="L80">            try (ResultSet rows = statement.executeQuery()) {</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">                return rows.next() ? Optional.of(map(rows)) : Optional.empty();</span>
             }
-<span class="nc" id="L71">        } catch (MappingException exception) {</span>
-<span class="nc" id="L72">            throw exception;</span>
-<span class="nc" id="L73">        } catch (SQLException exception) {</span>
-<span class="nc" id="L74">            throw translate(&quot;find item&quot;, exception);</span>
+<span class="nc" id="L83">        } catch (MappingException exception) {</span>
+<span class="nc" id="L84">            throw exception;</span>
+<span class="nc" id="L85">        } catch (SQLException exception) {</span>
+<span class="nc" id="L86">            throw translate(&quot;find item&quot;, exception);</span>
         }
     }
 
     /** Lists an owner's items in database id order. */
     public List&lt;Item&gt; findByOwner(long ownerId) {
-<span class="nc" id="L80">        return query(&quot;SELECT * FROM listed_items WHERE owner_id = ? ORDER BY item_id&quot;, ownerId);</span>
+<span class="fc" id="L92">        return query(&quot;SELECT * FROM listed_items WHERE owner_id = ? ORDER BY item_id&quot;, ownerId);</span>
     }
 
     /** Lists currently available items owned by a user. */
     public List&lt;Item&gt; findAvailableByOwner(long ownerId) {
-<span class="nc" id="L85">        return query(&quot;&quot;&quot;</span>
+<span class="nc" id="L97">        return query(&quot;&quot;&quot;</span>
                 SELECT * FROM listed_items
                 WHERE owner_id = ? AND status = 'available'
                 ORDER BY item_id&quot;&quot;&quot;, ownerId);
     }
 
     private List&lt;Item&gt; query(String sql, long ownerId) {
-<span class="nc" id="L92">        List&lt;Item&gt; items = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L93">        try (PreparedStatement statement = database.connection().prepareStatement(sql)) {</span>
-<span class="nc" id="L94">            statement.setLong(1, ownerId);</span>
-<span class="nc" id="L95">            try (ResultSet rows = statement.executeQuery()) {</span>
-<span class="nc bnc" id="L96" title="All 2 branches missed.">                while (rows.next()) {</span>
-<span class="nc" id="L97">                    items.add(map(rows));</span>
+<span class="fc" id="L104">        List&lt;Item&gt; items = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L105">        try (PreparedStatement statement = database.connection().prepareStatement(sql)) {</span>
+<span class="fc" id="L106">            statement.setLong(1, ownerId);</span>
+<span class="fc" id="L107">            try (ResultSet rows = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">                while (rows.next()) {</span>
+<span class="fc" id="L109">                    items.add(map(rows));</span>
                 }
             }
-<span class="nc" id="L100">            return items;</span>
-<span class="nc" id="L101">        } catch (MappingException exception) {</span>
-<span class="nc" id="L102">            throw exception;</span>
-<span class="nc" id="L103">        } catch (SQLException exception) {</span>
-<span class="nc" id="L104">            throw translate(&quot;query items&quot;, exception);</span>
+<span class="fc" id="L112">            return items;</span>
+<span class="nc" id="L113">        } catch (MappingException exception) {</span>
+<span class="nc" id="L114">            throw exception;</span>
+<span class="nc" id="L115">        } catch (SQLException exception) {</span>
+<span class="nc" id="L116">            throw translate(&quot;query items&quot;, exception);</span>
         }
     }
 
     private static Item map(ResultSet rows) {
         try {
-<span class="fc" id="L110">            String created = rows.getString(&quot;created_at&quot;);</span>
-<span class="fc" id="L111">            return new Item(rows.getLong(&quot;item_id&quot;), rows.getLong(&quot;owner_id&quot;),</span>
-<span class="fc" id="L112">                    rows.getString(&quot;item_name&quot;), rows.getString(&quot;description&quot;),</span>
-<span class="fc" id="L113">                    rows.getInt(&quot;cost_per_day&quot;),</span>
-<span class="fc" id="L114">                    ItemStatus.fromDbValue(rows.getString(&quot;status&quot;)),</span>
-<span class="pc bpc" id="L115" title="1 of 2 branches missed.">                    created == null ? null : LocalDateTime.parse(created.replace(' ', 'T')));</span>
-<span class="nc" id="L116">        } catch (SQLException | RuntimeException exception) {</span>
-<span class="nc" id="L117">            throw new MappingException(&quot;Could not map item row&quot;, exception);</span>
+<span class="fc" id="L122">            String created = rows.getString(&quot;created_at&quot;);</span>
+<span class="fc" id="L123">            return new Item(rows.getLong(&quot;item_id&quot;), rows.getLong(&quot;owner_id&quot;),</span>
+<span class="fc" id="L124">                    rows.getString(&quot;item_name&quot;), rows.getString(&quot;description&quot;),</span>
+<span class="fc" id="L125">                    rows.getInt(&quot;cost_per_day&quot;),</span>
+<span class="fc" id="L126">                    ItemStatus.fromDbValue(rows.getString(&quot;status&quot;)),</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">                    created == null ? null : LocalDateTime.parse(created.replace(' ', 'T')));</span>
+<span class="nc" id="L128">        } catch (SQLException | RuntimeException exception) {</span>
+<span class="nc" id="L129">            throw new MappingException(&quot;Could not map item row&quot;, exception);</span>
         }
     }
 
     private static RuntimeException translate(String operation, SQLException exception) {
-<span class="nc bnc" id="L122" title="All 2 branches missed.">        String text = exception.getMessage() == null ? &quot;&quot; : exception.getMessage().toLowerCase();</span>
-<span class="nc bnc" id="L123" title="All 6 branches missed.">        if (text.contains(&quot;unique&quot;) || text.contains(&quot;not null&quot;) || text.contains(&quot;check&quot;)</span>
-<span class="nc bnc" id="L124" title="All 2 branches missed.">                || text.contains(&quot;foreign key&quot;)) {</span>
-<span class="nc" id="L125">            return new ConstraintViolationException(&quot;Constraint violation while trying to &quot; + operation, exception);</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        String text = exception.getMessage() == null ? &quot;&quot; : exception.getMessage().toLowerCase();</span>
+<span class="nc bnc" id="L135" title="All 6 branches missed.">        if (text.contains(&quot;unique&quot;) || text.contains(&quot;not null&quot;) || text.contains(&quot;check&quot;)</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">                || text.contains(&quot;foreign key&quot;)) {</span>
+<span class="nc" id="L137">            return new ConstraintViolationException(&quot;Constraint violation while trying to &quot; + operation, exception);</span>
         }
-<span class="nc" id="L127">        return new DatabaseException(&quot;Database failure while trying to &quot; + operation, exception);</span>
+<span class="nc" id="L139">        return new DatabaseException(&quot;Database failure while trying to &quot; + operation, exception);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

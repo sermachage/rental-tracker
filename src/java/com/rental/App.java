@@ -6,6 +6,7 @@ import com.rental.infrastructure.Database;
 import com.rental.repository.ItemRepository;
 import com.rental.repository.RentalRepository;
 import com.rental.repository.UserRepository;
+import com.rental.repository.AppConfigurationRepository;
 import com.rental.service.RentalService;
 import com.rental.transport.Menu;
 
@@ -25,7 +26,8 @@ public class App {
             UserRepository users = new UserRepository(database);
             ItemRepository items = new ItemRepository(database);
             RentalRepository rentals = new RentalRepository(database);
-            RentalService service = new RentalService(users, items, rentals);
+            AppConfigurationRepository configuration = new AppConfigurationRepository(database);
+            RentalService service = new RentalService(users, items, rentals, configuration);
             new Menu(service, users, items).run();
         } catch (Exception exception) {
             System.out.println("The application could not start: " + exception.getMessage());

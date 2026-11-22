@@ -15,10 +15,18 @@
                                owner_id references users.id
                                rental.item_id references listed_items.item_id
                                rental.renter_id references users.id
+
+                       +--------------------+
+                       | app_configuration  |
+                       +--------------------+
+                       | singleton_id PK    |
+                       | owner_id FK        |----> users.id
+                       +--------------------+
 ```
 
 ## Constraints
 
+- `app_configuration` contains at most one row (`singleton_id = 1`) and stores the selected owner.
 - `users.username` is `NOT NULL` and `UNIQUE`.
 - `listed_items.owner_id`, `item_name`, `description`, `cost_per_day`, and `status` are required.
 - `cost_per_day >= 0`.

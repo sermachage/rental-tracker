@@ -12,18 +12,46 @@ public class RentalService {
     private final UserRepository users;
     private final ItemRepository items;
     private final RentalRepository rentals;
+    private final AppConfigurationRepository configuration;
 
-    public RentalService(UserRepository users, ItemRepository items, RentalRepository rentals) {
+    public RentalService(UserRepository users, ItemRepository items, RentalRepository rentals,
+                         AppConfigurationRepository configuration) {
         this.users = users;
         this.items = items;
         this.rentals = rentals;
+        this.configuration = configuration;
     }
 
-    /** Loads the first account or creates it when the database is empty. */
+    /** Returns the owner selected during first-run setup, if setup is complete. */
+    public Optional<User> findOwner() {
+        return configuration.findOwnerId().map(ownerId -> users.findById(ownerId).orElseThrow(
+                () -> new NotFoundException("Configured owner not found: " + ownerId)));
+    }
+
+    /** Claims the seed owner or creates an account, then persists the selected owner. */
     public User loadOwner(String username) {
         requireText(username, "Username");
-        Optional<User> existing = users.findByUsername(username.trim());
-        return existing.orElseGet(() -> users.insert(User.newUser(username.trim())));
+        Optional<User> configured = findOwner();
+        if (configured.isPresent()) {
+            return configured.get();
+        }
+
+        String normalizedUsername = username.trim();
+        Optional<User> existing = users.findByUsername(normalizedUsername);
+        Optional<User> seedOwner = users.findFirst();
+        User owner;
+        if (existing.isPresent()) {
+            owner = existing.get();
+            if (seedOwner.isPresent() && !seedOwner.get().id().equals(owner.id())) {
+                items.transferOwner(seedOwner.get().id(), owner.id());
+            }
+        } else if (seedOwner.isPresent()) {
+            owner = users.updateUsername(seedOwner.get().id(), normalizedUsername);
+        } else {
+            owner = users.insert(User.newUser(normalizedUsername));
+        }
+        configuration.saveOwnerId(owner.id());
+        return owner;
     }
 
     /** Creates or reuses a renter for the supplied name. */

@@ -8,7 +8,7 @@ before the final review.
 - [x] Required tests all passing (`mvn verify`)
 - [x] Test coverage report committed (`docs/coverage/index.html`)
 - [x] Seeded DB file `data/app.db` with **at least 6 listed items**
-- [x] ER diagram of all 3 tables (columns, types, constraints, relationships) in `docs/er-diagram.md`
+- [x] ER diagram of the 3 domain tables and owner-setup configuration table (columns, constraints, relationships) in `docs/er-diagram.md`
 - [x] Git history shows teamwork:
   - [x] Branches merged via local feature-branch merges
   - [x] Small, focused commits
