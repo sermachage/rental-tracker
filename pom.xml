@@ -52,10 +52,17 @@
           <execution>
             <id>add-source-roots</id>
             <phase>generate-sources</phase>
-            <goals><goal>add-source</goal><goal>add-test-source</goal></goals>
+            <goals><goal>add-source</goal></goals>
             <configuration>
               <sources><source>src/java</source></sources>
-              <testSources><testSource>src/test</testSource></testSources>
+            </configuration>
+          </execution>
+          <execution>
+            <id>add-test-source-roots</id>
+            <phase>generate-test-sources</phase>
+            <goals><goal>add-test-source</goal></goals>
+            <configuration>
+              <sources><source>src/test</source></sources>
             </configuration>
           </execution>
         </executions>
