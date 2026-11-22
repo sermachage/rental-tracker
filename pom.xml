@@ -17,7 +17,7 @@
 
   <properties>
     <!-- We target Java 21 -->
-    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <junit.version>5.10.2</junit.version>
     <!-- Fully-qualified name of the class with main(); used by exec plugin -->
@@ -44,6 +44,22 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>add-source-roots</id>
+            <phase>generate-sources</phase>
+            <goals><goal>add-source</goal><goal>add-test-source</goal></goals>
+            <configuration>
+              <sources><source>src/java</source></sources>
+              <testSources><testSource>src/test</testSource></testSources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <!-- Surefire runs the unit tests during `mvn test` / `mvn verify` -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
