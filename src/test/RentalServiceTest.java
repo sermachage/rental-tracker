@@ -62,10 +62,11 @@ class RentalServiceTest {
             Item item = service.listItem(owner.id(), "Tent", "Camping", 10);
             Rental rental = service.rent(owner.id(), item.itemId(), "meelis", 2);
             service.delist(owner.id(), item.itemId());
-            service.confirmReturn(owner.id(), rental.rentalId());
-            assertEquals(ItemStatus.UNLISTED, items.findById(item.itemId()).orElseThrow().status());
             assertThrows(IllegalStateException.class,
                     () -> service.relist(owner.id(), item.itemId()));
+            service.confirmReturn(owner.id(), rental.rentalId());
+            assertEquals(ItemStatus.UNLISTED, items.findById(item.itemId()).orElseThrow().status());
+            assertEquals(ItemStatus.AVAILABLE, service.relist(owner.id(), item.itemId()).status());
         }
     }
 

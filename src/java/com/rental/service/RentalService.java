@@ -119,10 +119,8 @@ public class RentalService {
         }
         Item item = findOwnedItem(ownerId, rental.itemId());
         Rental closed = rentals.update(rental.closedAt(LocalDateTime.now().withNano(0)));
-        ItemStatus target = item.status() == ItemStatus.UNLISTED
-                ? ItemStatus.UNLISTED : ItemStatus.AVAILABLE;
-        if (item.status() == ItemStatus.RENTED || item.status() == ItemStatus.UNLISTED) {
-            items.updateStatus(item.withStatus(item.status().transitionTo(target)));
+        if (item.status() == ItemStatus.RENTED) {
+            items.updateStatus(item.withStatus(item.status().transitionTo(ItemStatus.AVAILABLE)));
         }
         return closed;
     }
@@ -132,3 +130,4 @@ public class RentalService {
             throw new IllegalArgumentException(label + " cannot be empty");
         }
     }
+}

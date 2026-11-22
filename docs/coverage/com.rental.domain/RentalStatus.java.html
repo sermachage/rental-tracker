@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RentalStatus.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rental-tracker</a> &gt; <a href="index.source.html" class="el_package">com.rental.domain</a> &gt; <span class="el_source">RentalStatus.java</span></div><h1>RentalStatus.java</h1><pre class="source lang-java linenums">package com.rental.domain;
+
+/**
+ * Lifecycle of a rental record: ACTIVE while the item is out, CLOSED once returned.
+ * The only legal move is ACTIVE -&gt; CLOSED (a rental is never reopened or deleted).
+ */
+<span class="fc" id="L7">public enum RentalStatus {</span>
+<span class="fc" id="L8">    ACTIVE(&quot;active&quot;),</span>
+<span class="fc" id="L9">    CLOSED(&quot;closed&quot;);</span>
+
+    /** The exact text stored in the database's status column. */
+    private final String dbValue;
+
+<span class="fc" id="L14">    RentalStatus(String dbValue) {</span>
+<span class="fc" id="L15">        this.dbValue = dbValue;</span>
+<span class="fc" id="L16">    }</span>
+
+    /** @return the text to store in the database */
+    public String dbValue() {
+<span class="fc" id="L20">        return dbValue;</span>
+    }
+
+    /** @return true only for ACTIVE -&gt; CLOSED */
+    public boolean canTransitionTo(RentalStatus target) {
+<span class="fc bfc" id="L25" title="All 4 branches covered.">        return this == ACTIVE &amp;&amp; target == CLOSED;</span>
+    }
+
+    /**
+     * Returns {@code target} if the move is legal, otherwise throws.
+     *
+     * @throws InvalidStatusTransitionException if the move is not allowed
+     */
+    public RentalStatus transitionTo(RentalStatus target) {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (!canTransitionTo(target)) {</span>
+<span class="fc" id="L35">            throw new InvalidStatusTransitionException(this.name(), target.name());</span>
+        }
+<span class="fc" id="L37">        return target;</span>
+    }
+
+    /**
+     * Converts database text back into the enum.
+     *
+     * @throws IllegalArgumentException if the text matches no status (or is null)
+     */
+    public static RentalStatus fromDbValue(String text) {
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        for (RentalStatus status : values()) {</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            if (status.dbValue.equals(text)) {</span>
+<span class="fc" id="L48">                return status;</span>
+            }
+        }
+<span class="fc" id="L51">        throw new IllegalArgumentException(&quot;Unknown rental status: &quot; + text);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

@@ -60,23 +60,23 @@ public class UserRepository {
             try (ResultSet rows = statement.executeQuery()) {
                 return rows.next() ? Optional.of(map(rows)) : Optional.empty();
             }
-
-            /** Finds the first account. This project uses one owner account. */
-            public Optional<User> findFirst() {
-                try (PreparedStatement statement = database.connection().prepareStatement(
-                        "SELECT id, username, password, created_at FROM users ORDER BY id LIMIT 1");
-                     ResultSet rows = statement.executeQuery()) {
-                    return rows.next() ? Optional.of(map(rows)) : Optional.empty();
-                } catch (MappingException exception) {
-                    throw exception;
-                } catch (SQLException exception) {
-                    throw translate("find owner", exception);
-                }
-            }
         } catch (MappingException exception) {
             throw exception;
         } catch (SQLException exception) {
             throw translate("find user", exception);
+        }
+    }
+
+    /** Finds the first account. This project uses one owner account. */
+    public Optional<User> findFirst() {
+        try (PreparedStatement statement = database.connection().prepareStatement(
+                "SELECT id, username, password, created_at FROM users ORDER BY id LIMIT 1");
+             ResultSet rows = statement.executeQuery()) {
+            return rows.next() ? Optional.of(map(rows)) : Optional.empty();
+        } catch (MappingException exception) {
+            throw exception;
+        } catch (SQLException exception) {
+            throw translate("find owner", exception);
         }
     }
 

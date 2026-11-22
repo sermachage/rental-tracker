@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Item.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rental-tracker</a> &gt; <a href="index.source.html" class="el_package">com.rental.domain</a> &gt; <span class="el_source">Item.java</span></div><h1>Item.java</h1><pre class="source lang-java linenums">package com.rental.domain;
+
+import java.time.LocalDateTime;
+
+/**
+ * Something an owner lists for rent. Maps to a row of the {@code listed_items} table.
+ *
+ * &lt;p&gt;Immutable record: to &quot;change&quot; the status we create a modified COPY via
+ * {@link #withStatus(ItemStatus)} and save that.
+ *
+ * @param itemId      database id; {@code null} until saved
+ * @param ownerId     id of the {@link User} who listed it
+ * @param itemName    short name, e.g. &quot;Ladder&quot;
+ * @param description longer text, e.g. &quot;6-step aluminium ladder&quot;
+ * @param costPerDay  price per day in whole currency units (simple int for this project)
+ * @param status      current lifecycle state
+ * @param createdAt   set by the database; {@code null} until saved
+ */
+<span class="fc" id="L19">public record Item(Long itemId, Long ownerId, String itemName, String description,</span>
+                   int costPerDay, ItemStatus status, LocalDateTime createdAt) {
+
+    /** Factory for a new, unsaved listing. Every new listing starts as AVAILABLE. */
+    public static Item newListing(Long ownerId, String itemName, String description, int costPerDay) {
+<span class="fc" id="L24">        return new Item(null, ownerId, itemName, description, costPerDay, ItemStatus.AVAILABLE, null);</span>
+    }
+
+    /** @return a copy of this item with a different status (original is untouched) */
+    public Item withStatus(ItemStatus newStatus) {
+<span class="fc" id="L29">        return new Item(itemId, ownerId, itemName, description, costPerDay, newStatus, createdAt);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>
