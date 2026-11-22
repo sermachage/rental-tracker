@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AppConfigurationRepository.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">rental-tracker</a> &gt; <a href="index.source.html" class="el_package">com.rental.repository</a> &gt; <span class="el_source">AppConfigurationRepository.java</span></div><h1>AppConfigurationRepository.java</h1><pre class="source lang-java linenums">package com.rental.repository;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Optional;
+
+import com.rental.infrastructure.Database;
+
+/** Persists the owner account selected during first-run setup. */
+public class AppConfigurationRepository {
+    private final Database database;
+
+<span class="fc" id="L14">    public AppConfigurationRepository(Database database) {</span>
+<span class="fc" id="L15">        this.database = database;</span>
+<span class="fc" id="L16">    }</span>
+
+    /** Returns the configured owner id, or empty before first-run setup. */
+    public Optional&lt;Long&gt; findOwnerId() {
+<span class="fc" id="L20">        try (PreparedStatement statement = database.connection().prepareStatement(</span>
+                &quot;SELECT owner_id FROM app_configuration WHERE singleton_id = 1&quot;);
+<span class="fc" id="L22">             ResultSet rows = statement.executeQuery()) {</span>
+<span class="fc bfc" id="L23" title="All 2 branches covered.">            if (!rows.next()) {</span>
+<span class="fc" id="L24">                return Optional.empty();</span>
+            }
+<span class="fc" id="L26">            long ownerId = rows.getLong(&quot;owner_id&quot;);</span>
+<span class="pc bpc" id="L27" title="1 of 2 branches missed.">            if (rows.wasNull()) {</span>
+<span class="nc" id="L28">                throw new MappingException(&quot;Configured owner id is NULL&quot;, null);</span>
+            }
+<span class="fc" id="L30">            return Optional.of(ownerId);</span>
+<span class="pc bpc" id="L31" title="2 of 4 branches missed.">        } catch (MappingException exception) {</span>
+<span class="nc" id="L32">            throw exception;</span>
+<span class="nc" id="L33">        } catch (SQLException exception) {</span>
+<span class="nc" id="L34">            throw new DatabaseException(&quot;Could not load application configuration&quot;, exception);</span>
+        }
+    }
+
+    /** Saves or replaces the configured owner id. */
+    public void saveOwnerId(long ownerId) {
+<span class="fc" id="L40">        try (PreparedStatement statement = database.connection().prepareStatement(&quot;&quot;&quot;</span>
+                INSERT INTO app_configuration(singleton_id, owner_id) VALUES (1, ?)
+                ON CONFLICT(singleton_id) DO UPDATE SET owner_id = excluded.owner_id&quot;&quot;&quot;)) {
+<span class="fc" id="L43">            statement.setLong(1, ownerId);</span>
+<span class="fc" id="L44">            statement.executeUpdate();</span>
+<span class="nc" id="L45">        } catch (SQLException exception) {</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            String message = exception.getMessage() == null ? &quot;&quot; : exception.getMessage().toLowerCase();</span>
+<span class="nc bnc" id="L47" title="All 4 branches missed.">            if (message.contains(&quot;constraint&quot;) || message.contains(&quot;foreign key&quot;)) {</span>
+<span class="nc" id="L48">                throw new ConstraintViolationException(</span>
+                        &quot;Could not save configured owner&quot;, exception);
+            }
+<span class="nc" id="L51">            throw new DatabaseException(&quot;Could not save application configuration&quot;, exception);</span>
+<span class="fc" id="L52">        }</span>
+<span class="fc" id="L53">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.16.202610240946</span></div></body></html>

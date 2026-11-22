@@ -60,6 +60,18 @@ public class ItemRepository {
         }
     }
 
+    /** Assigns seeded listings to the account selected during first-run setup. */
+    public void transferOwner(long previousOwnerId, long newOwnerId) {
+        try (PreparedStatement statement = database.connection().prepareStatement(
+                "UPDATE listed_items SET owner_id = ? WHERE owner_id = ?")) {
+            statement.setLong(1, newOwnerId);
+            statement.setLong(2, previousOwnerId);
+            statement.executeUpdate();
+        } catch (SQLException exception) {
+            throw translate("transfer item ownership", exception);
+        }
+    }
+
     /** Finds an item by id. */
     public Optional<Item> findById(long id) {
         try (PreparedStatement statement = database.connection().prepareStatement(

@@ -21,7 +21,7 @@ The command compiles the application, runs the test suite against temporary SQLi
 mvn -q compile exec:java
 ```
 
-The application opens `data/app.db` and creates the database schema if needed. The repository includes a seeded demo database with an owner and six listings.
+The application opens `data/app.db` and creates the database schema if needed. On first launch it asks for the owner's username; if the database contains the demo seed, that account is claimed and its listings stay attached. Later launches load the selected owner without asking again. The repository includes a seeded demo database with six listings.
 
 ## Features
 
@@ -65,5 +65,6 @@ SQLite data is stored in `data/app.db`. The schema contains:
 - `users` — owner and renter accounts
 - `listed_items` — item listings and current status
 - `rentals` — rental and return history
+- `app_configuration` — the selected owner account id
 
 See [`docs/er-diagram.md`](docs/er-diagram.md) for table columns, constraints, and relationships.

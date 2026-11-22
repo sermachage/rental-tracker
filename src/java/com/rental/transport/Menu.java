@@ -14,18 +14,25 @@ public class Menu {
     private final RentalService service;
     private final UserRepository users;
     private final ItemRepository items;
-    private final Scanner input = new Scanner(System.in);
+    private final Scanner input;
     private User owner;
 
     public Menu(RentalService service, UserRepository users, ItemRepository items) {
+        this(service, users, items, new Scanner(System.in));
+    }
+
+    /** Creates the menu with an input source, allowing the console flow to be tested. */
+    public Menu(RentalService service, UserRepository users, ItemRepository items, Scanner input) {
         this.service = service;
         this.users = users;
         this.items = items;
+        this.input = input;
     }
 
     /** Runs the main menu until the user chooses Exit. */
     public void run() {
-        owner = users.findFirst().orElseGet(this::createOwner);
+        owner = service.findOwner().orElseGet(this::createOwner);
+        System.out.println("Welcome, " + owner.username() + ".");
         System.out.println(AppBanner());
         boolean running = true;
         while (running) {
