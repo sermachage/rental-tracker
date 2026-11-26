@@ -90,9 +90,9 @@ That keeps things tidy: if we change how the menu looks, the storeroom is untouc
 ```
 [Step 1 DONE] workshop + rules
 [Step 2 DONE] vocabulary + item life rules       <- you are here
-[Step 3 next] storeroom door + shelves (database connection and tables)
-[Step 4     ] storeroom clerk (repositories + error alarms)
-[Step 5     ] manager (services)
-[Step 6     ] waiter (menus)
-[Step 7     ] seed data, diagram, coverage report
+[Step 3 DONE] storeroom door + shelves (database connection and tables)
+[Step 4 DONE    ] storeroom clerk (repositories + error alarms)
+[Step 5 DONE    ] manager (services)
+[Step 6 DONE     ] waiter (menus)
+[Step 7  DONE ] seed data, diagram, coverage report
 ```
